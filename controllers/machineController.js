@@ -15,13 +15,11 @@ export const fetchAllMachines = async (req, res) => {
 export const advancedFilterMachines = async (req, res) => {
   try {
     const query = {};
-    let projection = { machineId: 1, timestamp: 1 }; // default fields
+    let projection = {}; // default → full data
 
     // =========================
-    // Filters
+    // Sleep (min & max)
     // =========================
-
-    // Sleep
     if (req.query.sleepMin) {
       query["sleep.sleepSeconds"] = { ...query["sleep.sleepSeconds"], $gte: Number(req.query.sleepMin) };
     }
@@ -29,24 +27,32 @@ export const advancedFilterMachines = async (req, res) => {
       query["sleep.sleepSeconds"] = { ...query["sleep.sleepSeconds"], $lte: Number(req.query.sleepMax) };
     }
 
+    // =========================
     // Antivirus
+    // =========================
     if (req.query.avActive === "true") query["antivirus.active"] = true;
     if (req.query.avActive === "false") query["antivirus.active"] = false;
 
+    // =========================
     // Disk encryption
+    // =========================
     if (req.query.diskEncrypted === "true") query["diskEncryption.diskEncrypted"] = true;
     if (req.query.diskEncrypted === "false") query["diskEncryption.diskEncrypted"] = false;
 
+    // =========================
     // OS Update
+    // =========================
     if (req.query.osLatest === "true") query["osUpdate.isLatest"] = true;
     if (req.query.osLatest === "false") query["osUpdate.isLatest"] = false;
 
-    // Hostname / Platform filters
+    // =========================
+    // Hostname / Platform
+    // =========================
     if (req.query.hostname) query["hostname"] = req.query.hostname;
     if (req.query.platform) query["platform"] = req.query.platform;
 
     // =========================
-    // Projection (select only fields)
+    // Projection (only param)
     // =========================
     switch (req.query.only) {
       case "antivirus":
@@ -62,7 +68,7 @@ export const advancedFilterMachines = async (req, res) => {
         projection = { machineId: 1, timestamp: 1, sleep: 1 };
         break;
       default:
-        projection = { machineId: 1, timestamp: 1 }; // only these 2 if no "only" param
+        projection = {}; // full data
     }
 
     const machines = await MainSystemData.find(query, projection).sort({ timestamp: -1 });
